@@ -6,6 +6,9 @@
 
 namespace Chocofamily\SmartHttp;
 
+use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Psr7\Response;
+
 class Repeater implements RepeaterInterface
 {
 
@@ -17,7 +20,12 @@ class Repeater implements RepeaterInterface
     /**
      * @var int
      */
-    private $attempt = 0;
+    private $maxRetries = 3;
+
+    /**
+     * @var int
+     */
+    private $retries;
 
     public function __construct(int $delayRetry)
     {
@@ -32,21 +40,27 @@ class Repeater implements RepeaterInterface
     public function decider()
     {
         return function (int $retries, $request, $response, $error): bool {
-            $this->attempt++;
 
-            return $this->attempt++ < $retries;
+            $this->retries = $retries;
+
+            if ($retries < $this->maxRetries &&
+                ($this->isServerError($response) || $this->isConnectionError($error))) {
+                return true;
+            }
+
+            return false;
         };
     }
 
     /**
-     * PВычисляет задержку между запросами
+     * Вычисляет задержку между запросами
      *
      * @return \Closure
      */
     public function delay()
     {
         return function (int $retries, $response): int {
-            return $retries * $this->delay;
+            return $retries * $this->delay + 100;
         };
     }
 
@@ -61,8 +75,57 @@ class Repeater implements RepeaterInterface
     /**
      * @return int
      */
-    public function getAttempt(): int
+    public function getMaxRetries(): int
     {
-        return $this->attempt;
+        return $this->maxRetries;
+    }
+
+    /**
+     * @param int $maxRetries
+     */
+    public function setMaxRetries(int $maxRetries): void
+    {
+        $this->maxRetries = $maxRetries;
+    }
+
+    /**
+     * @param Response $response
+     *
+     * @return bool
+     */
+    private function isServerError($response)
+    {
+        if (empty($response)) {
+            return false;
+        }
+
+        if ($response->getStatusCode() >= 500) {
+            return true;
+        }
+
+        if ($response->getBody() &&
+            !empty($contents = $response->getBody()->getContents())) {
+            $bodyContent = json_decode($contents, true);
+
+            if (isset($bodyContent['error_code']) &&
+                $bodyContent['error_code'] >= 500) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isConnectionError($error)
+    {
+        return $error instanceof ConnectException;
+    }
+
+    /**
+     * @return int
+     */
+    public function getRetries(): int
+    {
+        return $this->retries;
     }
 }

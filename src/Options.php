@@ -10,7 +10,9 @@ final class Options
 {
     const MAX_FAILURES = 5;
 
-    const RETRIES         = 3;
+    const MAX_RETRIES = 3;
+
+    const INIT_RETRIES = 1;
 
     const DELAY_RETRY     = 200;
 
