@@ -1,0 +1,32 @@
+{
+  "name": "chocofamilyme/smart-http",
+  "description": "HTTP клиент для общения сервисов в микросервисной архитектуре",
+  "keywords": [
+    "http",
+    "phalcon"
+  ],
+  "type": "library",
+  "license": [
+    "BSD-3-Clause"
+  ],
+  "homepage": "https://github.com/chocofamilyme/smart-http",
+  "authors": [
+    {
+      "name": "IT Chocolife.me",
+      "homepage": "https://chocolife.me"
+    }
+  ],
+  "require": {
+    "php": ">= 7.0.0",
+    "guzzlehttp/guzzle": "~6.0",
+    "flix-tech/guzzle-circuit-breaker-middleware": "~1.0"
+  },
+  "require-dev": {
+    "codeception/codeception": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Chocofamily\\SmartHttp\\": "src/"
+    }
+  }
+}
