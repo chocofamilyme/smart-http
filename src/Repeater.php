@@ -105,7 +105,8 @@ class Repeater implements RepeaterInterface
 
         if ($response->getBody() &&
             !empty($contents = $response->getBody()->getContents())) {
-            $bodyContent = json_decode($contents, true);
+            $response->getBody()->rewind();
+            $bodyContent = \json_decode($contents, true);
 
             if (isset($bodyContent['error_code']) &&
                 $bodyContent['error_code'] >= 500) {

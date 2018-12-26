@@ -13,6 +13,7 @@ use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Request;
 use Chocofamily\SmartHttp\Client;
 use function GuzzleHttp\Psr7\stream_for;
+use Helper\SmartHttp\CacheMock;
 use Phalcon\Config;
 
 class RetryCest
@@ -133,13 +134,15 @@ class RetryCest
         ]);
         $p = $c->sendAsync(new Request('GET', 'http://test.com'), []);
 
-        $startTime = time();
+        $startTime = microtime(true);
         $I->expectException(ServerException::class, function () use ($p) {
             $p->wait();
         });
-        $endTime = time();
+        $endTime = microtime(true);
 
-        $I->assertEquals(5 * $c->repeater->getDelay() / 1000, $endTime - $startTime);
+        $expectedTime = round(6 * $c->repeater->getDelay() / 1000);
+
+        $I->assertEquals($expectedTime, round($endTime - $startTime));
     }
 
     private function getPreparedClient($responses, $params = [])
@@ -152,7 +155,8 @@ class RetryCest
         $config['maxRetries'] = 3;
 
         $config->merge(new Config($params));
+        $cache = new CacheMock();
 
-        return new Client($config);
+        return new Client($config, $cache);
     }
 }

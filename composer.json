@@ -19,7 +19,7 @@
   "require": {
     "php": ">= 7.0.0",
     "guzzlehttp/guzzle": "~6.0",
-    "flix-tech/guzzle-circuit-breaker-middleware": "~1.0"
+    "ejsmont-artur/php-circuit-breaker": "~0.1"
   },
   "require-dev": {
     "codeception/codeception": "*"

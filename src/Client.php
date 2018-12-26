@@ -6,21 +6,20 @@
 
 namespace Chocofamily\SmartHttp;
 
-use Ejsmont\CircuitBreaker\Core\CircuitBreaker;
-use Ejsmont\CircuitBreaker\Storage\Adapter\DummyAdapter;
+use Chocofamily\SmartHttp\Middleware\CircuitBreakerMiddleware;
+use Chocofamily\SmartHttp\Storage\PhalconCacheAdapter;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Handler\CurlHandler;
 use GuzzleHttp\HandlerStack;
-use Psr\Http\Message\RequestInterface;
-use GuzzleHttp\Exception\RequestException;
+use Phalcon\Cache\BackendInterface;
 
 class Client extends GuzzleClient
 {
     public $repeater;
 
-    public function __construct(\Phalcon\Config $config)
+    public function __construct(\Phalcon\Config $config, BackendInterface $cache)
     {
-        $storage = new DummyAdapter();
+        $storage = new PhalconCacheAdapter($cache);
         $circuitBreaker = new CircuitBreaker(
             $storage,
             $config->get('failures', Options::MAX_FAILURES),
@@ -34,8 +33,8 @@ class Client extends GuzzleClient
         $this->repeater->setMaxRetries($config->get('maxRetries', Options::MAX_RETRIES));
 
         $stack = HandlerStack::create($handler);
-        $stack->push(Middleware::circuitBreaker($circuitBreaker, $this->serviceName(), $this->exceptionMap()));
-        //$stack->push(\GuzzleHttp\Middleware::retry($this->repeater->decider(), $this->repeater->delay()));
+        $stack->push(new CircuitBreakerMiddleware($circuitBreaker));
+        $stack->push(\GuzzleHttp\Middleware::retry($this->repeater->decider(), $this->repeater->delay()));
 
         $options                    = $config->toArray();
         $options['timeout']         = $config->get('timeout', Options::TIMEOUT);
@@ -44,27 +43,5 @@ class Client extends GuzzleClient
         $options['handler']         = $stack;
 
         parent::__construct($options);
-    }
-
-    private function serviceName()
-    {
-        return function (RequestInterface $request, array $options) {
-            if (\array_key_exists('my_custom_option_key', $options)) {
-                return $options['my_custom_option_key'];
-            }
-
-            return null;
-        };
-    }
-
-    private function exceptionMap()
-    {
-        return function ($rejectedValue) {
-            if ($rejectedValue instanceof RequestException && $rejectedValue->getResponse()) {
-                return 404 !== $rejectedValue->getResponse()->getStatusCode();
-            }
-
-            return true;
-        };
     }
 }
