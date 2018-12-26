@@ -7,29 +7,21 @@
 namespace Chocofamily\SmartHttp;
 
 use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Psr7\Response as PsrResponse;
 use Psr\Http\Message\RequestInterface;
+use Chocofamily\SmartHttp\Http\Response;
 
 class CircuitBreaker extends \Ejsmont\CircuitBreaker\Core\CircuitBreaker
 {
     const CB_TRANSFER_OPTION_KEY = 'circuit_breaker.service_name';
 
-    public function fulfilled(Response $response, string $serviceName)
+    public function fulfilled(PsrResponse $psrResponse, string $serviceName)
     {
-        if ($response->getStatusCode() >= 500) {
+        $response = new Response($psrResponse);
+
+        if ($response->isServerError()) {
             $this->reportFailure($serviceName);
             return;
-        }
-
-        if ($response->getBody() &&
-            !empty($contents = $response->getBody()->getContents())) {
-            $response->getBody()->rewind();
-            $bodyContent = \json_decode($contents, true);
-            if (isset($bodyContent['error_code']) &&
-                $bodyContent['error_code'] >= 500) {
-                $this->reportFailure($serviceName);
-                return;
-            }
         }
 
         $this->reportSuccess($serviceName);

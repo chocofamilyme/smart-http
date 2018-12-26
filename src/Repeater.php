@@ -7,7 +7,7 @@
 namespace Chocofamily\SmartHttp;
 
 use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Psr7\Response;
+use Chocofamily\SmartHttp\Http\Response;
 
 class Repeater implements RepeaterInterface
 {
@@ -39,12 +39,13 @@ class Repeater implements RepeaterInterface
      */
     public function decider()
     {
-        return function (int $retries, $request, $response, $error): bool {
+        return function (int $retries, $request, $psrResponse, $error): bool {
 
             $this->retries = $retries;
+            $response = new Response($psrResponse);
 
             if ($retries < $this->maxRetries &&
-                ($this->isServerError($response) || $this->isConnectionError($error))) {
+                ($response->isServerError() || $error instanceof ConnectException)) {
                 return true;
             }
 
@@ -86,40 +87,6 @@ class Repeater implements RepeaterInterface
     public function setMaxRetries(int $maxRetries): void
     {
         $this->maxRetries = $maxRetries;
-    }
-
-    /**
-     * @param Response $response
-     *
-     * @return bool
-     */
-    private function isServerError($response)
-    {
-        if (empty($response)) {
-            return false;
-        }
-
-        if ($response->getStatusCode() >= 500) {
-            return true;
-        }
-
-        if ($response->getBody() &&
-            !empty($contents = $response->getBody()->getContents())) {
-            $response->getBody()->rewind();
-            $bodyContent = \json_decode($contents, true);
-
-            if (isset($bodyContent['error_code']) &&
-                $bodyContent['error_code'] >= 500) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function isConnectionError($error)
-    {
-        return $error instanceof ConnectException;
     }
 
     /**

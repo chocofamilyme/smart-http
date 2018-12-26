@@ -7,7 +7,8 @@ namespace Helper\SmartHttp;
 
 class CacheMock implements \Phalcon\Cache\BackendInterface
 {
-    public $data = [];
+    private $data = [];
+    private $lastKey;
 
     public function start($keyName, $lifetime = null)
     {
@@ -46,7 +47,7 @@ class CacheMock implements \Phalcon\Cache\BackendInterface
 
     public function getLastKey()
     {
-        // TODO: Implement getLastKey() method.
+        return $this->lastKey;
     }
 
     public function get($keyName, $lifetime = null)
@@ -59,6 +60,7 @@ class CacheMock implements \Phalcon\Cache\BackendInterface
 
     public function save($keyName = null, $content = null, $lifetime = null, $stopBuffer = null)
     {
+        $this->lastKey = $keyName;
         $this->data[$keyName] = $content;
     }
 
