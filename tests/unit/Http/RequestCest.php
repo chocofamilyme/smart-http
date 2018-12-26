@@ -24,9 +24,8 @@ class RequestCest
         $responses = [new Response(200)];
         $request   = $this->getPreparedRequest($responses);
 
-        $response = $request->send('POST', 'http://test.com');
+        $response = $request->send('POST', 'http://test.com', [], 'test-service');
 
-        $I->assertNotNull($request->getServiceName());
         $I->assertNotNull($this->cache->getLastKey());
         $I->assertEquals(200, $response->getStatusCode());
     }
@@ -37,10 +36,9 @@ class RequestCest
         $request   = $this->getPreparedRequest($responses);
 
         /** @var Promise $promise */
-        $promise  = $request->sendAsync('GET', 'http://test.com');
+        $promise  = $request->sendAsync('GET', 'http://test.com', 'test-service');
         $response = $promise->wait();
 
-        $I->assertNotNull($request->getServiceName());
         $I->assertNotNull($this->cache->getLastKey());
         $I->assertEquals(200, $response->getStatusCode());
     }
@@ -60,7 +58,7 @@ class RequestCest
             'http://test.com',
             'http://test.com/asd',
             'http://test.com/qwe',
-        ]);
+        ], 'test-service');
 
         $I->assertNotNull($results);
 
@@ -68,6 +66,7 @@ class RequestCest
             /** @var Response $result */
             $I->assertEquals(200, $result->getStatusCode());
         }
+        $I->assertNotNull($this->cache->getLastKey());
     }
 
     /**
@@ -84,7 +83,6 @@ class RequestCest
         $config                = \Phalcon\Di::getDefault()->getShared('config')->get('smartHttp', []);
         $config['handler']     = $handler;
         $config['maxRetries']  = 3;
-        $config['serviceName'] = 'test-service';
 
         $config->merge(new Config($params));
 

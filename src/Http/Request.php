@@ -55,17 +55,14 @@ class Request extends Injectable
      *
      * @param array  $data
      *
+     * @param null   $serviceName
+     *
      * @return mixed|\Psr\Http\Message\ResponseInterface
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function send(string $method, string $uri, $data = [])
+    public function send(string $method, string $uri, $data = [], $serviceName = null)
     {
-        $options = [];
-
-        if (!empty($this->serviceName)) {
-            $options[CircuitBreaker::CB_TRANSFER_OPTION_KEY] = $this->serviceName;
-        }
-
+        $options = $this->generateOptions($serviceName);
         $options[$this->methods[$method]] = $data;
 
         return $this->httpClient->request($method, $uri, $options);
@@ -75,33 +72,29 @@ class Request extends Injectable
      * @param string $method
      * @param string $uri
      *
+     * @param null   $serviceName
+     *
      * @return \GuzzleHttp\Promise\PromiseInterface
      */
-    public function sendAsync(string $method, string $uri)
+    public function sendAsync(string $method, string $uri, $serviceName = null)
     {
-        $options = [];
-
-        if (!empty($this->serviceName)) {
-            $options[CircuitBreaker::CB_TRANSFER_OPTION_KEY] = $this->serviceName;
-        }
+        $options = $this->generateOptions($serviceName);
 
         return $this->httpClient->requestAsync($method, $uri, $options);
     }
 
     /**
-     * @param $routes
+     * @param      $routes
+     *
+     * @param null $serviceName
      *
      * @return array
      * @throws \Throwable
      */
-    public function sendMultiple($routes)
+    public function sendMultiple($routes, $serviceName = null)
     {
-        $options = [];
+        $options = $this->generateOptions($serviceName);
         $promises = [];
-
-        if (!empty($this->serviceName)) {
-            $options[CircuitBreaker::CB_TRANSFER_OPTION_KEY] = $this->serviceName;
-        }
 
         foreach ($routes as $route) {
             $promises[] = $this->httpClient->requestAsync('GET', $route, $options);
@@ -116,5 +109,16 @@ class Request extends Injectable
     public function getServiceName()
     {
         return $this->serviceName;
+    }
+
+    private function generateOptions($serviceName)
+    {
+        $options = [];
+
+        if (isset($serviceName) || isset($this->serviceName)) {
+            $options[CircuitBreaker::CB_TRANSFER_OPTION_KEY] = $serviceName ?: $this->serviceName;
+        }
+
+        return $options;
     }
 }
