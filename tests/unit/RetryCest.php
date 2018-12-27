@@ -18,37 +18,56 @@ use Phalcon\Config;
 
 class RetryCest
 {
-
-    public function tryToRepeatOnConnectException(\UnitTester $I)
+    /**
+     * @dataprovider exceptionDataProvider
+     *
+     * @param \UnitTester          $I
+     * @param \Helper\Unit         $helper
+     * @param \Codeception\Example $data
+     */
+    public function tryToRepeatOnException(\UnitTester $I, \Helper\Unit $helper, \Codeception\Example $data)
     {
-        $I->wantToTest('повторить при ошибке с соединением');
+        $I->wantToTest($data['message']);
 
         $lastStatusCode = 200;
-        $responses      = [
-            new ConnectException('test', new Request('GET', 'test')),
-            new Response($lastStatusCode),
-        ];
 
-        $c = $this->getPreparedClient($responses);
+        $c = $this->getPreparedClient($data['responses']);
         $p = $c->sendAsync(new Request('GET', 'http://test.com'), []);
 
         $I->assertEquals($lastStatusCode, $p->wait()->getStatusCode());
     }
 
-    public function tryToRepeatOnServerError(\UnitTester $I)
+    protected function exceptionDataProvider()
     {
-        $I->wantToTest('повторить при ошибке сервера');
-
         $lastStatusCode = 200;
-        $responses      = [
-            new Response(500),
-            new Response($lastStatusCode),
+
+        return [
+            [
+                'message'   => 'повторить при ошибке с соединением',
+                'responses' => [
+                    new ConnectException('test', new Request('GET', 'test')),
+                    new Response($lastStatusCode),
+                ],
+            ],
+            [
+                'message'   => 'повторить при ошибке сервера',
+                'responses' => [
+                    new Response(500),
+                    new Response($lastStatusCode),
+                ],
+            ],
+            [
+                'message'   => 'повторить при ошибке с API',
+                'responses' => [
+                    new Response(201, [], stream_for(json_encode([
+                        'status'     => 'error',
+                        'error_code' => 500,
+                        'message'    => 'test error',
+                    ]))),
+                    new Response($lastStatusCode),
+                ],
+            ],
         ];
-
-        $c = $this->getPreparedClient($responses);
-        $p = $c->sendAsync(new Request('GET', 'http://test.com'), []);
-
-        $I->assertEquals($lastStatusCode, $p->wait()->getStatusCode());
     }
 
     public function tryToRepeatUntilMaxRetries(\UnitTester $I)
@@ -71,26 +90,6 @@ class RetryCest
             $p->wait();
         });
         $I->assertEquals($maxRetries, $c->repeater->getRetries());
-    }
-
-    public function tryToRepeatOnApiError(\UnitTester $I)
-    {
-        $I->wantToTest('повторить при ошибке с API');
-
-        $lastStatusCode = 201;
-
-        $stream = stream_for(json_encode([
-            'status'     => 'error',
-            'error_code' => 500,
-            'message'    => 'test error',
-        ]));
-
-        $responses = [new Response(200, [], $stream), new Response($lastStatusCode)];
-
-        $c = $this->getPreparedClient($responses);
-        $p = $c->sendAsync(new Request('GET', 'http://test.com'), []);
-
-        $I->assertEquals($lastStatusCode, $p->wait()->getStatusCode());
     }
 
     public function tryToSendTwoSequentialRequestsViaOneClient(\UnitTester $I)

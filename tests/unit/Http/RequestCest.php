@@ -80,9 +80,9 @@ class RequestCest
         $handler = new MockHandler($responses);
 
         /** @var Config $config */
-        $config                = \Phalcon\Di::getDefault()->getShared('config')->get('smartHttp', []);
-        $config['handler']     = $handler;
-        $config['maxRetries']  = 3;
+        $config               = \Phalcon\Di::getDefault()->getShared('config')->get('smartHttp', []);
+        $config['handler']    = $handler;
+        $config['maxRetries'] = 3;
 
         $config->merge(new Config($params));
 

@@ -20,75 +20,64 @@ use Phalcon\Config;
  */
 class CircuitBreakerCest
 {
-    public function tryToBlockServiceOnServerError(\UnitTester $I)
+    /**
+     * @dataprovider exceptionDataProvider
+     *
+     * @param \UnitTester          $I
+     * @param \Helper\Unit         $helper
+     * @param \Codeception\Example $data
+     *
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function tryToBlockServiceOnException(\UnitTester $I, \Helper\Unit $helper, \Codeception\Example $data)
     {
-        $I->wantToTest('заблокировать при ошибке сервера');
-
-        $responses = [new Response('500')];
+        $I->wantToTest($data['message']);
 
         $options = [
             CircuitBreaker::CB_TRANSFER_OPTION_KEY => 'test_service',
-            'http_errors'          => true,
+            'http_errors'                          => true,
         ];
 
-        $c = $this->getPreparedClient($responses);
+        $c = $this->getPreparedClient($data['responses']);
 
-        $I->expectException(ServerException::class, function () use ($c, $options) {
+        if (isset($data['exception'])) {
+            $I->expectException($data['exception'], function () use ($c, $options) {
+                $c->send(new Request('GET', 'http://test.com'), $options);
+            });
+        } else {
             $c->send(new Request('GET', 'http://test.com'), $options);
-        });
+        }
 
         $I->expectException(CircuitIsClosedException::class, function () use ($c, $options) {
             $c->send(new Request('GET', 'http://test.com'), $options);
         });
     }
 
-    public function tryToBlockServiceOnApiError(\UnitTester $I)
+    protected function exceptionDataProvider()
     {
-        $I->wantToTest('заблокировать при ошибке соединении');
-        $responses = [new Response(200, [], stream_for(json_encode([
-            'status'     => 'error',
-            'error_code' => 500,
-            'message'    => 'test error',
-        ])))];
-
-        $options = [
-            CircuitBreaker::CB_TRANSFER_OPTION_KEY => 'test_service',
-            'http_errors'          => true,
+        return [
+            [
+                'message'   => 'заблокировать при ошибке сервера',
+                'responses' => [new Response('500')],
+                'exception' => ServerException::class,
+            ],
+            [
+                'message'   => 'заблокировать при ошибке с API',
+                'responses' => [
+                    new Response(200, [], stream_for(json_encode([
+                        'status'     => 'error',
+                        'error_code' => 500,
+                        'message'    => 'test error',
+                    ]))),
+                ],
+            ],
+            [
+                'message'   => 'заблокировать при ошибке соединении',
+                'responses' => [new ConnectException('test', new Request('get', 'test'))],
+                'exception' => ConnectException::class,
+            ],
         ];
-
-        $c = $this->getPreparedClient($responses);
-
-        $c->send(new Request('GET', 'http://test.com'), $options);
-
-        $I->expectException(CircuitIsClosedException::class, function () use ($c, $options) {
-            $c->send(new Request('GET', 'http://test.com'), $options);
-        });
     }
-
-    public function tryToBlockServiceOnConnectionError(\UnitTester $I)
-    {
-        $I->wantToTest('заблокировать при ошибке с API');
-
-        $responses = [
-            new ConnectException('test', new Request('get', 'test'))
-        ];
-
-        $options = [
-            CircuitBreaker::CB_TRANSFER_OPTION_KEY => 'test_service',
-            'http_errors'          => true,
-        ];
-
-        $c = $this->getPreparedClient($responses);
-
-        $I->expectException(ConnectException::class, function () use ($c, $options) {
-            $c->send(new Request('GET', 'http://test.com'), $options);
-        });
-
-        $I->expectException(CircuitIsClosedException::class, function () use ($c, $options) {
-            $c->send(new Request('GET', 'http://test.com'), $options);
-        });
-    }
-
 
     public function tryToUnblockAfterExceededTimeout(\UnitTester $I)
     {
@@ -98,11 +87,11 @@ class CircuitBreakerCest
 
         $options = [
             CircuitBreaker::CB_TRANSFER_OPTION_KEY => 'test_service',
-            'http_errors'          => true,
+            'http_errors'                          => true,
         ];
 
         $c = $this->getPreparedClient($responses, [
-            'timeout' => 0.5
+            'timeout' => 0.5,
         ]);
 
         $I->expectException(ServerException::class, function () use ($c, $options) {
