@@ -36,7 +36,7 @@ class RequestCest
         $request   = $this->getPreparedRequest($responses);
 
         /** @var Promise $promise */
-        $promise  = $request->sendAsync('GET', 'http://test.com', 'test-service');
+        $promise  = $request->sendAsync('GET', 'http://test.com', [], 'test-service');
         $response = $promise->wait();
 
         $I->assertNotNull($this->cache->getLastKey());

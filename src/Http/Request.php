@@ -72,13 +72,15 @@ class Request extends Injectable
      * @param string $method
      * @param string $uri
      *
+     * @param array  $data
      * @param null   $serviceName
      *
      * @return \GuzzleHttp\Promise\PromiseInterface
      */
-    public function sendAsync(string $method, string $uri, $serviceName = null)
+    public function sendAsync(string $method, string $uri, $data = [], $serviceName = null)
     {
         $options = $this->generateOptions($serviceName);
+        $options[$this->methods[$method]] = $data;
 
         return $this->httpClient->requestAsync($method, $uri, $options);
     }
