@@ -3,14 +3,14 @@
 namespace Chocofamily\SmartHttp\Http;
 
 use Chocofamily\SmartHttp\CircuitBreaker;
-use function GuzzleHttp\Promise\unwrap;
+use function GuzzleHttp\Promise\settle;
 use Phalcon\Cache\BackendInterface;
 use Phalcon\Config;
 use Phalcon\Di\Injectable;
 
 class Request extends Injectable
 {
-    const GUZZLE_SUCCESS_STATE = 'fulfilled';
+    const SUCCESS_STATE = 'fulfilled';
     const HTTP_METHODS         = [
         'GET'     => 1,
         'POST'    => 2,
@@ -45,7 +45,7 @@ class Request extends Injectable
         Config $config,
         BackendInterface $cache
     ) {
-        $this->httpClient = new \Chocofamily\SmartHttp\Client($config, $cache);
+        $this->httpClient  = new \Chocofamily\SmartHttp\Client($config, $cache);
         $this->serviceName = $config->get('serviceName');
     }
 
@@ -62,7 +62,7 @@ class Request extends Injectable
      */
     public function send(string $method, string $uri, $data = [], $serviceName = null)
     {
-        $options = $this->generateOptions($serviceName);
+        $options                          = $this->generateOptions($serviceName);
         $options[$this->methods[$method]] = $data;
 
         return $this->httpClient->request($method, $uri, $options);
@@ -79,30 +79,32 @@ class Request extends Injectable
      */
     public function sendAsync(string $method, string $uri, $data = [], $serviceName = null)
     {
-        $options = $this->generateOptions($serviceName);
+        $options                          = $this->generateOptions($serviceName);
         $options[$this->methods[$method]] = $data;
 
         return $this->httpClient->requestAsync($method, $uri, $options);
     }
 
     /**
-     * @param      $routes
-     *
-     * @param null $serviceName
+     * @param      $requests array
      *
      * @return array
      * @throws \Throwable
      */
-    public function sendMultiple($routes, $serviceName = null)
+    public function sendMultiple($requests)
     {
-        $options = $this->generateOptions($serviceName);
         $promises = [];
 
-        foreach ($routes as $route) {
-            $promises[] = $this->httpClient->requestAsync('GET', $route, $options);
+        foreach ($requests as $name => $request) {
+            $options = [];
+
+            $options[$this->methods[$request['method']]] = $request['data'] ?? null;
+            $options[CircuitBreaker::CB_TRANSFER_OPTION_KEY] = $request['serviceName'] ?? null;
+
+            $promises[$name] = $this->httpClient->requestAsync($request['method'], $request['path'], $options);
         }
 
-        return unwrap($promises);
+        return settle($promises)->wait();
     }
 
     /**

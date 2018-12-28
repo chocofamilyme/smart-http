@@ -7,6 +7,7 @@
 namespace Unit;
 
 use Chocofamily\SmartHttp\Http\Request;
+use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Promise\Promise;
 use GuzzleHttp\Psr7\Response;
@@ -45,26 +46,67 @@ class RequestCest
 
     public function tryToSendMultipleRequest(\UnitTester $I)
     {
-
         $responses = [
-            new Response(200),
-            new Response(200),
-            new Response(200),
+            function (\GuzzleHttp\Psr7\Request $request, $options) {
+                return new Response(200, [], $request->getUri()->getQuery());
+            },
+            function (\GuzzleHttp\Psr7\Request $request, $options) {
+                return new Response(200, [], '');
+            },
+            function (\GuzzleHttp\Psr7\Request $request, $options) {
+                return new Response(200, [], $request->getBody());
+            },
+            new Response(500),
         ];
-        $request   = $this->getPreparedRequest($responses);
 
-        /** @var Promise $promise */
+        $resultData = [
+            'firstService'  => [
+                'data' => 'q=test',
+            ],
+            'secondService' => [
+                'data' => '',
+            ],
+            'thirdService'  => [
+                'data' => 'name=name_test&surname=surname_test',
+            ],
+        ];
+
+        $request = $this->getPreparedRequest($responses, ['maxRetries' => 1]);
         $results = $request->sendMultiple([
-            'http://test.com',
-            'http://test.com/asd',
-            'http://test.com/qwe',
-        ], 'test-service');
+            'firstService'  => [
+                'method'      => 'GET',
+                'path'        => 'http://test.com',
+                'data'        => ['q' => 'test'],
+                'serviceName' => 'firstService',
+            ],
+            'secondService' => [
+                'method' => 'GET',
+                'path'   => 'http://test.com/qwe',
+            ],
+            'thirdService'  => [
+                'method'      => 'POST',
+                'path'        => 'http://test.com/asd',
+                'data'        => [
+                    'name'    => 'name_test',
+                    'surname' => 'surname_test',
+                ],
+                'serviceName' => 'thirdService',
+            ],
+            'fourthService' => [
+                'method' => 'GET',
+                'path'   => 'http://test.com/500',
+            ],
+        ]);
 
         $I->assertNotNull($results);
 
-        foreach ($results as $result) {
-            /** @var Response $result */
-            $I->assertEquals(200, $result->getStatusCode());
+        foreach ($results as $key => $result) {
+            if ($result['state'] === Request::SUCCESS_STATE) {
+                $I->assertEquals(200, $result['value']->getStatusCode());
+                $I->assertEquals($resultData[$key]['data'], $result['value']->getBody()->getContents());
+            } else {
+                $I->assertEquals(ServerException::class, get_class($result['reason']));
+            }
         }
         $I->assertNotNull($this->cache->getLastKey());
     }

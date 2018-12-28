@@ -27,9 +27,10 @@ class Repeater implements RepeaterInterface
      */
     private $retries;
 
-    public function __construct(int $delayRetry)
+    public function __construct(int $delayRetry, int $maxRetries = 3)
     {
         $this->delay = $delayRetry;
+        $this->maxRetries = $maxRetries;
     }
 
     /**
