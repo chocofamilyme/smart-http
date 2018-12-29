@@ -3,6 +3,7 @@
  * @package Chocolife.me
  * @author  Kamet Aziza <kamet.a@chocolife.kz>
  */
+
 namespace Helper\SmartHttp;
 
 class CacheMock implements \Phalcon\Cache\BackendInterface
@@ -55,12 +56,13 @@ class CacheMock implements \Phalcon\Cache\BackendInterface
         if (!isset($this->data[$keyName])) {
             $this->save($keyName, 0);
         }
+
         return $this->data[$keyName];
     }
 
     public function save($keyName = null, $content = null, $lifetime = null, $stopBuffer = null)
     {
-        $this->lastKey = $keyName;
+        $this->lastKey        = $keyName;
         $this->data[$keyName] = $content;
     }
 
@@ -76,6 +78,6 @@ class CacheMock implements \Phalcon\Cache\BackendInterface
 
     public function exists($keyName = null, $lifetime = null)
     {
-        // TODO: Implement exists() method.
+        return array_key_exists($keyName, $this->data);
     }
 }

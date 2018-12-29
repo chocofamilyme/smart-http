@@ -10,20 +10,13 @@ use Phalcon\Di\Injectable;
 
 class Request extends Injectable
 {
-    const SUCCESS_STATE = 'fulfilled';
-    const HTTP_METHODS         = [
-        'GET'     => 1,
-        'POST'    => 2,
-        'PUT'     => 3,
-        'DELETE'  => 4,
-        'OPTIONS' => 5,
-    ];
+    const SUCCESS_STATE  = 'fulfilled';
+    const SERVICE_NAME   = 'serviceName';
+    const DATA           = 'data';
+    const CACHE_LIFETIME = 'cache';
 
     /** @var \Chocofamily\SmartHttp\Client */
     private $httpClient;
-
-    /** @var string */
-    private $serviceName;
 
     /**
      * Доступные методы для отправки запроса
@@ -45,8 +38,7 @@ class Request extends Injectable
         Config $config,
         BackendInterface $cache
     ) {
-        $this->httpClient  = new \Chocofamily\SmartHttp\Client($config, $cache);
-        $this->serviceName = $config->get('serviceName');
+        $this->httpClient = new \Chocofamily\SmartHttp\Client($config, $cache);
     }
 
     /**
@@ -60,10 +52,9 @@ class Request extends Injectable
      * @return mixed|\Psr\Http\Message\ResponseInterface
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function send(string $method, string $uri, $data = [], $serviceName = null)
+    public function send(string $method, string $uri, $data = [])
     {
-        $options                          = $this->generateOptions($serviceName);
-        $options[$this->methods[$method]] = $data;
+        $options = array_merge($data, $this->generateOptions($method, $data));
 
         return $this->httpClient->request($method, $uri, $options);
     }
@@ -77,10 +68,9 @@ class Request extends Injectable
      *
      * @return \GuzzleHttp\Promise\PromiseInterface
      */
-    public function sendAsync(string $method, string $uri, $data = [], $serviceName = null)
+    public function sendAsync(string $method, string $uri, $data = [])
     {
-        $options                          = $this->generateOptions($serviceName);
-        $options[$this->methods[$method]] = $data;
+        $options = array_merge($data, $this->generateOptions($method, $data));
 
         return $this->httpClient->requestAsync($method, $uri, $options);
     }
@@ -95,33 +85,21 @@ class Request extends Injectable
     {
         $promises = [];
 
-        foreach ($requests as $name => $request) {
-            $options = [];
-
-            $options[$this->methods[$request['method']]] = $request['data'] ?? null;
-            $options[CircuitBreaker::CB_TRANSFER_OPTION_KEY] = $request['serviceName'] ?? null;
-
-            $promises[$name] = $this->httpClient->requestAsync($request['method'], $request['path'], $options);
+        foreach ($requests as $name => $data) {
+            $options         = array_merge($data, $this->generateOptions($data['method'], $data));
+            $promises[$name] = $this->httpClient->requestAsync($data['method'], $data['path'], $options);
         }
 
         return settle($promises)->wait();
     }
 
-    /**
-     * @return string
-     */
-    public function getServiceName()
-    {
-        return $this->serviceName;
-    }
-
-    private function generateOptions($serviceName)
+    private function generateOptions($method, $data)
     {
         $options = [];
 
-        if (isset($serviceName) || isset($this->serviceName)) {
-            $options[CircuitBreaker::CB_TRANSFER_OPTION_KEY] = $serviceName ?: $this->serviceName;
-        }
+        $options[CircuitBreaker::CB_TRANSFER_OPTION_KEY] = $data[self::SERVICE_NAME] ?? null;
+        $options[$this->methods[$method]]                = $data[self::DATA] ?? null;
+        $options[self::CACHE_LIFETIME]                   = $data[self::CACHE_LIFETIME] ?? null;
 
         return $options;
     }

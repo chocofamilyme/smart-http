@@ -25,7 +25,7 @@ class RequestCest
         $responses = [new Response(200)];
         $request   = $this->getPreparedRequest($responses);
 
-        $response = $request->send('POST', 'http://test.com', [], 'test-service');
+        $response = $request->send('POST', 'http://test.com', ['serviceName' => 'test-service']);
 
         $I->assertNotNull($this->cache->getLastKey());
         $I->assertEquals(200, $response->getStatusCode());
@@ -37,7 +37,7 @@ class RequestCest
         $request   = $this->getPreparedRequest($responses);
 
         /** @var Promise $promise */
-        $promise  = $request->sendAsync('GET', 'http://test.com', [], 'test-service');
+        $promise  = $request->sendAsync('GET', 'http://test.com', ['serviceName' => 'test-service']);
         $response = $promise->wait();
 
         $I->assertNotNull($this->cache->getLastKey());

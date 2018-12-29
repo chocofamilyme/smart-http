@@ -6,6 +6,7 @@
 
 namespace Chocofamily\SmartHttp;
 
+use Chocofamily\SmartHttp\Middleware\CacheMiddleware;
 use Chocofamily\SmartHttp\Middleware\CircuitBreakerMiddleware;
 use Chocofamily\SmartHttp\Storage\PhalconCacheAdapter;
 use GuzzleHttp\Client as GuzzleClient;
@@ -32,8 +33,9 @@ class Client extends GuzzleClient
             );
 
         $stack = HandlerStack::create($config->get('handler'));
-        $stack->push(new CircuitBreakerMiddleware($circuitBreaker));
-        $stack->push(\GuzzleHttp\Middleware::retry($this->repeater->decider(), $this->repeater->delay()));
+        $stack->push(new CacheMiddleware($cache), 'cache');
+        $stack->push(new CircuitBreakerMiddleware($circuitBreaker), 'circuitBreaker');
+        $stack->push(\GuzzleHttp\Middleware::retry($this->repeater->decider(), $this->repeater->delay()), 'repeater');
 
         $options                    = $config->toArray();
         $options['timeout']         = $config->get('timeout', Options::TIMEOUT);
