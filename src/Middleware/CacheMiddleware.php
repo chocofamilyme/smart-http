@@ -32,8 +32,9 @@ class CacheMiddleware
             $key      = $request->getMethod() !== 'GET' ? null
                 : $this->getKey($request->getMethod(), $request->getUri());
 
-            if (isset($key) && $this->cache->exists($key)) {
-                return $this->getResponseFromCache($key);
+            if ($this->isCacheable($key, $lifetime)
+                && !empty($data = $this->cache->get($key))) {
+                return $this->getResponseFromCache($data);
             }
 
             /** @var Promise $promise */
@@ -41,7 +42,7 @@ class CacheMiddleware
 
             return $promise->then(
                 function ($value) use ($key, $lifetime) {
-                    if ($this->isCacheable($key, $value, $lifetime)) {
+                    if ($this->isCacheable($key, $lifetime) && $this->isSuccessful($value)) {
                         $this->saveToCache($key, $value, $lifetime);
                     }
 
@@ -59,19 +60,22 @@ class CacheMiddleware
         return self::CACHE_KEY_PREFIX.md5($method.$uri);
     }
 
-    private function getResponseFromCache($key)
+    private function getResponseFromCache($data)
     {
-        $data     = $this->cache->get($key);
         $response = new PsrResponse(200, $data['headers'], $data['body']);
 
         return promise_for($response);
     }
 
-    private function isCacheable($key, PsrResponse $psrResponse, $lifetime)
+    private function isCacheable($key, $lifetime)
+    {
+        return !empty($key) && !empty($lifetime);
+    }
+
+    private function isSuccessful(PsrResponse $psrResponse)
     {
         $response = new Response($psrResponse);
-
-        return !empty($key) && !empty($lifetime) && $response->isSuccessful();
+        return $response->isSuccessful();
     }
 
     private function saveToCache($key, PsrResponse $response, $lifetime)

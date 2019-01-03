@@ -53,11 +53,7 @@ class CacheMock implements \Phalcon\Cache\BackendInterface
 
     public function get($keyName, $lifetime = null)
     {
-        if (!isset($this->data[$keyName])) {
-            $this->save($keyName, 0);
-        }
-
-        return $this->data[$keyName];
+        return $this->data[$keyName] ?? "";
     }
 
     public function save($keyName = null, $content = null, $lifetime = null, $stopBuffer = null)

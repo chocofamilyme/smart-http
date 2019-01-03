@@ -36,9 +36,9 @@ class CacheCest
         $I->assertTrue($this->cache->exists($key));
     }
 
-    public function tryToNotSaveIntoCache(\UnitTester $I)
+    public function tryToNotSaveIntoCacheIfPost(\UnitTester $I)
     {
-        $I->wantToTest('не сохранять в кэш');
+        $I->wantToTest('не сохранять в кэш если запрос POST');
 
         $responses = [
             new Response(200),
@@ -51,10 +51,25 @@ class CacheCest
 
         $request = $this->getPreparedRequest($responses);
 
-        $request->send($method, $uri);
-        $I->assertFalse($this->cache->exists($key));
-
         $request->send($method, $uri, ['cache' => 60]);
+        $I->assertFalse($this->cache->exists($key));
+    }
+
+    public function tryToNotSaveIntoCacheIfNoLifetime(\UnitTester $I)
+    {
+        $I->wantToTest('не сохранять в кэш если не указан lifetime');
+
+        $responses = [
+            new Response(200),
+        ];
+
+        $method = 'GET';
+        $uri    = 'test.com';
+        $key    = CacheMiddleware::CACHE_KEY_PREFIX.md5($method.$uri);
+
+        $request = $this->getPreparedRequest($responses);
+
+        $request->send($method, $uri);
         $I->assertFalse($this->cache->exists($key));
     }
 
@@ -81,8 +96,8 @@ class CacheCest
 
         $request = $this->getPreparedRequest($responses);
         $request->send($method, $uri, ['cache' => 60]);
+        $result = $request->send($method, $uri, ['cache' => 60]);
 
-        $result = $request->send($method, $uri);
         $I->assertEquals(200, $result->getStatusCode());
         $I->assertEquals($body, $result->getBody()->getContents());
     }
@@ -116,8 +131,8 @@ class CacheCest
         $I->expectException(ServerException::class, function () use ($request, $method, $uri) {
             $request->send($method, $uri, ['cache' => 60]);
         });
+        $result = $request->send($method, $uri, ['cache' => 60]);
 
-        $result = $request->send($method, $uri);
         $I->assertEquals(200, $result->getStatusCode());
         $I->assertEquals($header, $result->getHeaders());
         $I->assertEquals($body, $result->getBody()->getContents());
@@ -149,7 +164,7 @@ class CacheCest
 
         $request = $this->getPreparedRequest($responses);
         $request->send($method, $uri, ['cache' => 60]);
-        $result = $request->send($method, $uri);
+        $result = $request->send($method, $uri, ['cache' => 60]);
 
         $I->assertEquals(200, $result->getStatusCode());
         $I->assertEquals($body, $result->getBody()->getContents());
