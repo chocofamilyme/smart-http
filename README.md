@@ -4,8 +4,7 @@ HTTP client на основе [Guzzle](https://github.com/guzzle/guzzle) с пр
 
 ### Возможности
 - Кэширование GET запросов
-- Автовыключение неработоспособных сервисов ([Pattern: Circuit Breaker](https://microservices
-.io/patterns/reliability/circuit-breaker.html))
+- Автовыключение неработоспособных сервисов ([Pattern: Circuit Breaker](https://microservices.io/patterns/reliability/circuit-breaker.html))
 - Повтор запроса, если сервис не отвечает за тайм аут или отвечает не успешным статусом
 - Выполнение нескольких параллельных асинхронных запросов ([Pattern: API Composition](https://microservices.io/patterns/data/api-composition.html))
 
