@@ -47,13 +47,12 @@ class Request extends Injectable
      *
      * @param array  $data
      *
-     * @param null   $serviceName
-     *
      * @return mixed|\Psr\Http\Message\ResponseInterface
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function send(string $method, string $uri, $data = [])
     {
+        $method  = strtoupper($method);
         $options = array_merge($data, $this->generateOptions($method, $data));
 
         return $this->httpClient->request($method, $uri, $options);
@@ -64,12 +63,12 @@ class Request extends Injectable
      * @param string $uri
      *
      * @param array  $data
-     * @param null   $serviceName
      *
      * @return \GuzzleHttp\Promise\PromiseInterface
      */
     public function sendAsync(string $method, string $uri, $data = [])
     {
+        $method  = strtoupper($method);
         $options = array_merge($data, $this->generateOptions($method, $data));
 
         return $this->httpClient->requestAsync($method, $uri, $options);
@@ -86,6 +85,7 @@ class Request extends Injectable
         $promises = [];
 
         foreach ($requests as $name => $data) {
+            $data['method']  = strtoupper($data['method']);
             $options         = array_merge($data, $this->generateOptions($data['method'], $data));
             $promises[$name] = $this->httpClient->requestAsync($data['method'], $data['path'], $options);
         }
