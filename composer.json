@@ -1,9 +1,10 @@
 {
   "name": "chocofamilyme/smart-http",
-  "description": "HTTP клиент для общения сервисов в микросервисной архитектуре",
+  "description": "HTTP клинте для общения между сервисами",
   "keywords": [
     "http",
-    "phalcon"
+    "phalcon",
+    "microservices"
   ],
   "type": "library",
   "license": [
