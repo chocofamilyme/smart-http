@@ -23,7 +23,7 @@ class Client extends GuzzleClient
         $circuitBreaker = new CircuitBreaker(
             $storage,
             $config->get('failures', Options::MAX_FAILURES),
-            $config->get('timeout', Options::TIMEOUT)
+            $config->get('lock_time', Options::LOCK_TIME)
         );
 
         $this->repeater = $config['repeater'] ??

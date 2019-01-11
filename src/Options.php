@@ -14,9 +14,15 @@ final class Options
 
     const INIT_RETRIES = 1;
 
-    const DELAY_RETRY     = 200;
+    //milliseconds
+    const DELAY_RETRY = 200;
 
-    const TIMEOUT         = 500;
+    //seconds
+    const TIMEOUT = 0.5;
 
-    const CONNECT_TIMEOUT = 1000;
+    //seconds
+    const LOCK_TIME = 600;
+
+    //seconds
+    const CONNECT_TIMEOUT = 1;
 }

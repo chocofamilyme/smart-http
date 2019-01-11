@@ -91,7 +91,7 @@ class CircuitBreakerCest
         ];
 
         $c = $this->getPreparedClient($responses, [
-            'timeout' => 0.5,
+            'lock_time' => 0.5,
         ]);
 
         $I->expectException(ServerException::class, function () use ($c, $options) {
