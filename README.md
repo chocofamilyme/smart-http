@@ -19,7 +19,7 @@ HTTP client на основе [Guzzle](https://github.com/guzzle/guzzle) с пр
 
 ## Простой GET запрос
 ```php
-    $request = new Request($config, $cache);
+    $request = new Chocofamily\SmartHttp\Http\Request($config, $cache);
 
     $options = [
         'serviceName' => 'serviceA',
