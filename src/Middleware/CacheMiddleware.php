@@ -16,7 +16,7 @@ use Psr\Http\Message\RequestInterface;
 
 class CacheMiddleware
 {
-    const CACHE_KEY_PREFIX    = 'cache_';
+    const DEFAULT_KEY_PREFIX  = 'smarthttp_';
     const SUCCESS_STATUS_CODE = 200;
     private $cache;
 
@@ -29,8 +29,9 @@ class CacheMiddleware
     {
         return function (RequestInterface $request, array $requestOptions) use ($handler) {
             $lifetime = $requestOptions[Request::CACHE_LIFETIME] ?? null;
+            $prefix   = $requestOptions[Request::CACHE_PREFIX] ?? '';
             $key      = $request->getMethod() !== 'GET' ? null
-                : $this->getKey($request->getMethod(), $request->getUri());
+                : $this->getKey($request->getMethod(), $request->getUri(), $prefix);
 
             if ($this->isCacheable($key, $lifetime)
                 && !empty($data = $this->cache->get($key))) {
@@ -55,9 +56,13 @@ class CacheMiddleware
         };
     }
 
-    private function getKey($method, $uri)
+    private function getKey(string $method, string $uri, string $prefix = ''): string
     {
-        return self::CACHE_KEY_PREFIX.md5($method.$uri);
+        if (empty($prefix)) {
+            $prefix = self::DEFAULT_KEY_PREFIX;
+        }
+
+        return $prefix.md5($method.$uri);
     }
 
     private function getResponseFromCache($data)
@@ -75,6 +80,7 @@ class CacheMiddleware
     private function isSuccessful(PsrResponse $psrResponse)
     {
         $response = new Response($psrResponse);
+
         return $response->isSuccessful();
     }
 

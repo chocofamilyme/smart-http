@@ -14,6 +14,7 @@ class Request extends Injectable
     const SERVICE_NAME   = 'serviceName';
     const DATA           = 'data';
     const CACHE_LIFETIME = 'cache';
+    const CACHE_PREFIX   = 'cachePrefix';
 
     /** @var \Chocofamily\SmartHttp\Client */
     private $httpClient;
