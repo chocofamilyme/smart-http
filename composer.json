@@ -28,6 +28,9 @@
   "autoload": {
     "psr-4": {
       "Chocofamily\\SmartHttp\\": "src/"
-    }
+    },
+    "files": [
+      "src/functions.php"
+    ]
   }
 }

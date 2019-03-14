@@ -20,7 +20,7 @@ class CacheCest
     /** @var BackendInterface */
     private $cache;
 
-    public function tryToSaveIntoCache(\UnitTester $I)
+    protected function tryToSaveIntoCache(\UnitTester $I)
     {
         $I->wantToTest('сохранить в кэш');
 
@@ -36,7 +36,7 @@ class CacheCest
         $I->assertTrue($this->cache->exists($key));
     }
 
-    public function tryToNotSaveIntoCacheIfPost(\UnitTester $I)
+    protected function tryToNotSaveIntoCacheIfPost(\UnitTester $I)
     {
         $I->wantToTest('не сохранять в кэш если запрос POST');
 
@@ -55,7 +55,7 @@ class CacheCest
         $I->assertFalse($this->cache->exists($key));
     }
 
-    public function tryToNotSaveIntoCacheIfNoLifetime(\UnitTester $I)
+    protected function tryToNotSaveIntoCacheIfNoLifetime(\UnitTester $I)
     {
         $I->wantToTest('не сохранять в кэш если не указан lifetime');
 
@@ -73,7 +73,7 @@ class CacheCest
         $I->assertFalse($this->cache->exists($key));
     }
 
-    public function tryToGetResponseFromCache(\UnitTester $I)
+    protected function tryToGetResponseFromCache(\UnitTester $I)
     {
         $I->wantToTest('получить ответ из кэша');
 
@@ -102,7 +102,7 @@ class CacheCest
         $I->assertEquals($body, $result->getBody()->getContents());
     }
 
-    public function tryToNotSaveServerErrorIntoCache(\UnitTester $I)
+    protected function tryToNotSaveServerErrorIntoCache(\UnitTester $I)
     {
         $I->wantToTest('не сохранять при ошибке сервера');
 
@@ -138,7 +138,7 @@ class CacheCest
         $I->assertEquals($body, $result->getBody()->getContents());
     }
 
-    public function tryToNotSaveApiErrorIntoCache(\UnitTester $I)
+    protected function tryToNotSaveApiErrorIntoCache(\UnitTester $I)
     {
         $I->wantToTest('не сохранять при ошибке API');
 
@@ -168,6 +168,42 @@ class CacheCest
 
         $I->assertEquals(200, $result->getStatusCode());
         $I->assertEquals($body, $result->getBody()->getContents());
+    }
+
+    /**
+     * @dataprovider dataProvider
+     *
+     * @param \UnitTester          $I
+     * @param \Codeception\Example $data
+     *
+     * @throws \ReflectionException
+     */
+    public function tryToClearUrl(\UnitTester $I, \Helper\Unit $helper, \Codeception\Example $data)
+    {
+
+        $cacheMiddleware = new CacheMiddleware(new CacheMock());
+
+        $url = $helper->invokeMethod($cacheMiddleware, 'clearUrl', [$data['url']]);
+
+        $I->assertEquals($data['expected'], $url);
+    }
+
+    protected function dataProvider()
+    {
+        return [
+            [
+                'url'      => 'http://users.vadim.chocodev.kz/user/towns?correlation_id=931fa704-15bf-409d-b108-299b7b5c942c&span_id=1',
+                'expected' => 'http://users.vadim.chocodev.kz/user/towns',
+            ],
+            [
+                'url'      => 'http://users.vadim.chocodev.kz/user/towns?correlation_id=931fa704-15bf-409d-b108-299b7b5c942c&span_id=1&key=value',
+                'expected' => 'http://users.vadim.chocodev.kz/user/towns?key=value',
+            ],
+            [
+                'url'      => 'http://users.vadim.chocodev.kz/user/towns?key=value&correlation_id=931fa704-15bf-409d-b108-299b7b5c942c&amp;span_id=2',
+                'expected' => 'http://users.vadim.chocodev.kz/user/towns?key=value',
+            ],
+        ];
     }
 
     /**
