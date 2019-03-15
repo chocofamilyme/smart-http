@@ -12,7 +12,7 @@ class PhalconCacheAdapter extends BaseAdapter
 {
     private $cache;
 
-    public function __construct(\Phalcon\Cache\BackendInterface $cache, int $ttl = 3600, $cachePrefix = false)
+    public function __construct(\Phalcon\Cache\BackendInterface $cache, int $ttl = 3600, string $cachePrefix = '')
     {
         parent::__construct($ttl, $cachePrefix);
         $this->cache = $cache;
