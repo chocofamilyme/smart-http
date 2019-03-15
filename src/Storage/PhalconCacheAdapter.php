@@ -3,6 +3,7 @@
  * @package Chocolife.me
  * @author  Kamet Aziza <kamet.a@chocolife.kz>
  */
+
 namespace Chocofamily\SmartHttp\Storage;
 
 use Ejsmont\CircuitBreaker\Storage\Adapter\BaseAdapter;
@@ -42,7 +43,7 @@ class PhalconCacheAdapter extends BaseAdapter
 
     private function getKey($key)
     {
-        return md5($this->cachePrefix.$key);
+        return $this->cachePrefix.md5($key);
     }
 
 }
