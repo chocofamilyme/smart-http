@@ -19,7 +19,12 @@ class Client extends GuzzleClient
 
     public function __construct(\Phalcon\Config $config, BackendInterface $cache)
     {
-        $storage        = new PhalconCacheAdapter($cache, $config->get('cbKeyPrefix', 'circuit_breaker'));
+        $storage = new PhalconCacheAdapter(
+            $cache,
+            $config->get('lock_time', Options::LOCK_TIME),
+            $config->get('cbKeyPrefix', 'circuit_breaker')
+        );
+
         $circuitBreaker = new CircuitBreaker(
             $storage,
             $config->get('failures', Options::MAX_FAILURES),
