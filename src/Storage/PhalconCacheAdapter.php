@@ -43,7 +43,7 @@ class PhalconCacheAdapter extends BaseAdapter
 
     private function getKey($key)
     {
-        return $this->cachePrefix.md5($key);
+        return $this->cachePrefix.'#'.$key;
     }
 
 }
