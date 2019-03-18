@@ -8,7 +8,7 @@ namespace Chocofamily\SmartHttp;
 
 final class Options
 {
-    const MAX_FAILURES = 5;
+    const MAX_FAILURES = 20;
 
     const MAX_RETRIES = 3;
 
