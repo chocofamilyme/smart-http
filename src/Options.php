@@ -8,7 +8,7 @@ namespace Chocofamily\SmartHttp;
 
 final class Options
 {
-    const MAX_FAILURES = 5;
+    const MAX_FAILURES = 20;
 
     const MAX_RETRIES = 3;
 
@@ -21,7 +21,8 @@ final class Options
     const TIMEOUT = 0.5;
 
     //seconds
-    const LOCK_TIME = 600;
+    const LOCK_TIME    = 600;
+    const RETRY_TIMOUT = 60;
 
     //seconds
     const CONNECT_TIMEOUT = 1;
