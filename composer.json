@@ -23,7 +23,7 @@
     "ejsmont-artur/php-circuit-breaker": "~0.1"
   },
   "require-dev": {
-    "codeception/codeception": "*"
+    "codeception/codeception": "^2.1"
   },
   "autoload": {
     "psr-4": {

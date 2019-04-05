@@ -11,43 +11,107 @@ use Chocofamily\SmartHttp\Middleware\CircuitBreakerMiddleware;
 use Chocofamily\SmartHttp\Storage\PhalconCacheAdapter;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 use Phalcon\Cache\BackendInterface;
+use Phalcon\Config;
 
 class Client extends GuzzleClient
 {
-    public $repeater;
+    /**
+     * @var Config
+     */
+    protected $config;
 
-    public function __construct(\Phalcon\Config $config, BackendInterface $cache)
+    /**
+     * @var BackendInterface
+     */
+    protected $cache;
+
+    /**
+     * @var array
+     */
+    protected $options = [];
+
+    /**
+     * @var HandlerStack
+     */
+    protected $stack;
+
+    /**
+     * @var Repeater
+     */
+    protected $repeater;
+
+    /**
+     * @var CircuitBreaker
+     */
+    protected $circuitBreaker;
+
+    /**
+     * Client constructor.
+     *
+     * @param Config           $config
+     * @param BackendInterface $cache
+     */
+    public function __construct(Config $config, BackendInterface $cache)
     {
+        $this->config = $config;
+        $this->cache  = $cache;
+
         $storage = new PhalconCacheAdapter(
-            $cache,
-            $config->get('lock_time', Options::LOCK_TIME),
-            $config->get('cbKeyPrefix', 'circuit_breaker')
+            $this->cache,
+            $this->config->get('lock_time', Options::LOCK_TIME),
+            $this->config->get('cbKeyPrefix', 'circuit_breaker')
         );
 
-        $circuitBreaker = new CircuitBreaker(
+        $this->circuitBreaker = new CircuitBreaker(
             $storage,
-            $config->get('failures', Options::MAX_FAILURES),
-            $config->get('retry_timout', Options::RETRY_TIMOUT)
+            $this->config->get('failures', Options::MAX_FAILURES),
+            $this->config->get('retry_timout', Options::RETRY_TIMOUT)
         );
 
-        $this->repeater = $config['repeater'] ??
+        $this->repeater = $this->config['repeater'] ??
             new Repeater(
-                (int) $config->get('delayRetry', Options::DELAY_RETRY),
-                (int) $config->get('maxRetries', Options::MAX_RETRIES)
+                (int) $this->config->get('delayRetry', Options::DELAY_RETRY),
+                (int) $this->config->get('maxRetries', Options::MAX_RETRIES)
             );
 
-        $stack = HandlerStack::create($config->get('handler'));
-        $stack->push(new CacheMiddleware($cache), 'cache');
-        $stack->push(new CircuitBreakerMiddleware($circuitBreaker), 'circuitBreaker');
-        $stack->push(\GuzzleHttp\Middleware::retry($this->repeater->decider(), $this->repeater->delay()), 'repeater');
+        $this->initStack();
 
-        $options                    = $config->toArray();
-        $options['timeout']         = $config->get('timeout', Options::TIMEOUT);
-        $options['connect_timeout'] = $config->get('connect_timeout', Options::CONNECT_TIMEOUT);
-        $options['retries']         = $config->get('init_retries', Options::INIT_RETRIES);
-        $options['handler']         = $stack;
+        $this->options                    = $this->config->toArray();
+        $this->options['timeout']         = $this->config->get('timeout', Options::TIMEOUT);
+        $this->options['connect_timeout'] = $this->config->get('connect_timeout', Options::CONNECT_TIMEOUT);
+        $this->options['retries']         = $this->config->get('init_retries', Options::INIT_RETRIES);
+        $this->options['handler']         = $this->stack;
 
-        parent::__construct($options);
+        parent::__construct($this->options);
+    }
+
+    /**
+     *
+     */
+    private function initStack()
+    {
+        $this->stack = HandlerStack::create($this->config->get('handler'));
+        $this->stack->push(new CacheMiddleware($this->cache), 'cache');
+        $this->stack->push(new CircuitBreakerMiddleware($this->circuitBreaker), 'circuitBreaker');
+        $this->stack->push(Middleware::retry($this->repeater->decider(), $this->repeater->delay()),
+            'repeater');
+    }
+
+    /**
+     * @return Repeater
+     */
+    public function getRepeater()
+    {
+        return $this->repeater;
+    }
+
+    /**
+     * @param Repeater $repeater
+     */
+    public function setRepeater($repeater)
+    {
+        $this->repeater = $repeater;
     }
 }

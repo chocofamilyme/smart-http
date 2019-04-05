@@ -3,10 +3,15 @@
 namespace Chocofamily\SmartHttp\Http;
 
 use Chocofamily\SmartHttp\CircuitBreaker;
+use Chocofamily\SmartHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Promise\PromiseInterface;
 use function GuzzleHttp\Promise\settle;
 use Phalcon\Cache\BackendInterface;
 use Phalcon\Config;
 use Phalcon\Di\Injectable;
+use Psr\Http\Message\ResponseInterface;
+use Throwable;
 
 class Request extends Injectable
 {
@@ -16,7 +21,7 @@ class Request extends Injectable
     const CACHE_LIFETIME = 'cache';
     const CACHE_PREFIX   = 'cachePrefix';
 
-    /** @var \Chocofamily\SmartHttp\Client */
+    /** @var Client */
     private $httpClient;
 
     /**
@@ -39,7 +44,7 @@ class Request extends Injectable
         Config $config,
         BackendInterface $cache
     ) {
-        $this->httpClient = new \Chocofamily\SmartHttp\Client($config, $cache);
+        $this->httpClient = new Client($config, $cache);
     }
 
     /**
@@ -48,8 +53,8 @@ class Request extends Injectable
      *
      * @param array  $data
      *
-     * @return mixed|\Psr\Http\Message\ResponseInterface
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @return mixed|ResponseInterface
+     * @throws GuzzleException
      */
     public function send(string $method, string $uri, $data = [])
     {
@@ -65,7 +70,7 @@ class Request extends Injectable
      *
      * @param array  $data
      *
-     * @return \GuzzleHttp\Promise\PromiseInterface
+     * @return PromiseInterface
      */
     public function sendAsync(string $method, string $uri, $data = [])
     {
@@ -79,7 +84,7 @@ class Request extends Injectable
      * @param      $requests array
      *
      * @return array
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function sendMultiple($requests)
     {
@@ -103,5 +108,21 @@ class Request extends Injectable
         $options[self::CACHE_LIFETIME]                   = $data[self::CACHE_LIFETIME] ?? null;
 
         return $options;
+    }
+
+    /**
+     * @return Client
+     */
+    public function getHttpClient(): Client
+    {
+        return $this->httpClient;
+    }
+
+    /**
+     * @param Client $httpClient
+     */
+    public function setHttpClient(Client $httpClient)
+    {
+        $this->httpClient = $httpClient;
     }
 }
