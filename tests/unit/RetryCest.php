@@ -86,10 +86,10 @@ class RetryCest
         ]);
         $p = $c->sendAsync(new Request('GET', 'http://test.com'), []);
 
-        $I->expectException(ServerException::class, function () use ($p) {
+        $I->expectThrowable(ServerException::class, function () use ($p) {
             $p->wait();
         });
-        $I->assertEquals($maxRetries, $c->repeater->getRetries());
+        $I->assertEquals($maxRetries, $c->getRepeater()->getRetries());
     }
 
     public function tryToSendTwoSequentialRequestsViaOneClient(\UnitTester $I)
@@ -108,13 +108,13 @@ class RetryCest
         ]);
 
 
-        $I->expectException(ServerException::class, function () use ($c) {
+        $I->expectThrowable(ServerException::class, function () use ($c) {
             $c->send(new Request('GET', 'http://test.com'), []);
         });
-        $I->expectException(ServerException::class, function () use ($c) {
+        $I->expectThrowable(ServerException::class, function () use ($c) {
             $c->send(new Request('GET', 'http://test.com'), []);
         });
-        $I->assertEquals($maxRetries, $c->repeater->getRetries());
+        $I->assertEquals($maxRetries, $c->getRepeater()->getRetries());
     }
 
     public function tryToDelay(\UnitTester $I)
@@ -134,12 +134,12 @@ class RetryCest
         $p = $c->sendAsync(new Request('GET', 'http://test.com'), []);
 
         $startTime = microtime(true);
-        $I->expectException(ServerException::class, function () use ($p) {
+        $I->expectThrowable(ServerException::class, function () use ($p) {
             $p->wait();
         });
         $endTime = microtime(true);
 
-        $expectedTime = round(6 * $c->repeater->getDelay() / 1000);
+        $expectedTime = round(6 * $c->getRepeater()->getDelay() / 1000);
 
         $I->assertEquals($expectedTime, round($endTime - $startTime));
     }

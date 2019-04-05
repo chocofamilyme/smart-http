@@ -128,7 +128,7 @@ class CacheCest
 
         $request = $this->getPreparedRequest($responses);
 
-        $I->expectException(ServerException::class, function () use ($request, $method, $uri) {
+        $I->expectThrowable(ServerException::class, function () use ($request, $method, $uri) {
             $request->send($method, $uri, ['cache' => 60]);
         });
         $result = $request->send($method, $uri, ['cache' => 60]);
