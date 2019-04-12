@@ -10,6 +10,7 @@ use Chocofamily\SmartHttp\Http\Request;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Promise\Promise;
+use function GuzzleHttp\Psr7\build_query;
 use GuzzleHttp\Psr7\Response;
 use Helper\SmartHttp\CacheMock;
 use Phalcon\Cache\BackendInterface;
@@ -106,6 +107,85 @@ class RequestCest
                 $I->assertEquals(ServerException::class, get_class($result['reason']));
             }
         }
+    }
+
+
+    /**
+     * @param \UnitTester $I
+     *
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function tryToSendFormParams(\UnitTester $I)
+    {
+        $responses   = [
+            function (\GuzzleHttp\Psr7\Request $request, $options) {
+                return new Response(200, [], $request->getBody()->getContents());
+            },
+        ];
+
+        $request = $this->getPreparedRequest($responses);
+        $data = [
+            'data' => ['key' => 'value'],
+        ];
+
+        /** @var Response $promise */
+        $response = $request->send('POST', 'http://test.com', $data);
+
+        $I->assertEquals(build_query($data['data']), $response->getBody()->getContents());
+    }
+
+    /**
+     * @param \UnitTester $I
+     *
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function tryToSendRawDataWithFormParams(\UnitTester $I)
+    {
+        $rawDataText = 'test_raw_data';
+        $responses   = [
+            function (\GuzzleHttp\Psr7\Request $request, $options) {
+                return new Response(200, [], $request->getBody()->getContents());
+            },
+        ];
+
+        $request = $this->getPreparedRequest($responses);
+
+        /** @var Response $promise */
+        $response = $request->send('POST', 'http://test.com', [
+            'data' => ['key' => 'value'],
+            'body'  => $rawDataText,
+        ]);
+
+        $I->assertEquals($rawDataText, $response->getBody()->getContents());
+    }
+
+    /**
+     * @param \UnitTester $I
+     *
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function tryToSendRawDataWithQueryParams(\UnitTester $I)
+    {
+        $responses   = [
+            function (\GuzzleHttp\Psr7\Request $request, $options) {
+                $result = $request->getBody()->getContents().'|'.$request->getUri()->getQuery();
+                return new Response(200, [], $result);
+            },
+        ];
+
+        $request = $this->getPreparedRequest($responses);
+        $data = [
+            'data' => ['key' => 'value'],
+            'body'  => 'test_raw_data',
+        ];
+
+        /** @var Response $promise */
+        $response = $request->send('GET', 'http://test.com', $data);
+
+        $I->assertEquals(
+            $data['body'].'|'.build_query($data['data']),
+            $response->getBody()->getContents()
+        );
     }
 
     /**

@@ -18,6 +18,8 @@ class Request extends Injectable
     const SUCCESS_STATE  = 'fulfilled';
     const SERVICE_NAME   = 'serviceName';
     const DATA           = 'data';
+    const BODY           = 'body';
+    const QUERY          = 'query';
     const CACHE_LIFETIME = 'cache';
     const CACHE_PREFIX   = 'cachePrefix';
 
@@ -103,11 +105,29 @@ class Request extends Injectable
     {
         $options = [];
 
+        if ($this->doesntHaveBodyParam($data) || $this->isQueryParam($method)) {
+            $options[$this->methods[$method]] = $data[self::DATA] ?? null;
+        }
+
         $options[CircuitBreaker::CB_TRANSFER_OPTION_KEY] = $data[self::SERVICE_NAME] ?? null;
-        $options[$this->methods[$method]]                = $data[self::DATA] ?? null;
         $options[self::CACHE_LIFETIME]                   = $data[self::CACHE_LIFETIME] ?? null;
 
         return $options;
+    }
+
+    /**
+     * @param array $data
+     *
+     * @return bool
+     */
+    private function doesntHaveBodyParam(array $data)
+    {
+        return !isset($data[self::BODY]);
+    }
+
+    private function isQueryParam($method)
+    {
+        return $this->methods[$method] === self::QUERY;
     }
 
     /**
