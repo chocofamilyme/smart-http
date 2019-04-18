@@ -18,10 +18,10 @@ class Request extends Injectable
     const SUCCESS_STATE  = 'fulfilled';
     const SERVICE_NAME   = 'serviceName';
     const DATA           = 'data';
-    const BODY           = 'body';
-    const QUERY          = 'query';
     const CACHE_LIFETIME = 'cache';
     const CACHE_PREFIX   = 'cachePrefix';
+
+    const DATA_KEY = ['body', 'form_params', 'multipart', 'query', 'json'];
 
     /** @var Client */
     private $httpClient;
@@ -105,7 +105,7 @@ class Request extends Injectable
     {
         $options = [];
 
-        if ($this->doesntHaveBodyParam($data) || $this->isQueryParam($method)) {
+        if ($this->doesntHaveData($data)) {
             $options[$this->methods[$method]] = $data[self::DATA] ?? null;
         }
 
@@ -120,14 +120,15 @@ class Request extends Injectable
      *
      * @return bool
      */
-    private function doesntHaveBodyParam(array $data)
+    private function doesntHaveData(array $data): bool
     {
-        return !isset($data[self::BODY]);
-    }
+        foreach (self::DATA_KEY as $key) {
+            if (array_key_exists($key, $data)) {
+                return false;
+            }
+        }
 
-    private function isQueryParam($method)
-    {
-        return $this->methods[$method] === self::QUERY;
+        return true;
     }
 
     /**
