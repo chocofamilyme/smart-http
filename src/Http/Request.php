@@ -123,7 +123,7 @@ class Request extends Injectable
     private function doesntHaveData(array $data): bool
     {
         if(empty($data[self::DATA]) == false) {
-            return false;
+            return true;
         }
 
         foreach (self::DATA_KEY as $key) {
