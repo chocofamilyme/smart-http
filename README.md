@@ -15,6 +15,11 @@ HTTP client на основе [Guzzle](https://github.com/guzzle/guzzle) с пр
 - ejsmont-artur/php-circuit-breaker
 
 
+### Установка
+```
+$ composer require chocofamilyme/smart-http
+```
+
 ### Пример
 
 ## Простой GET запрос
