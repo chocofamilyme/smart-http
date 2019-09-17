@@ -38,9 +38,11 @@ class CacheMiddleware
             $prefix   = $requestOptions[Request::CACHE_PREFIX] ?? '';
             $key      = $lifetime ? $this->getKey($request->getMethod(), $request->getUri(), $prefix) : '';
 
-            if ($this->isCacheable($key, $lifetime)
-                && !empty($data = $this->cache->get($key))) {
-                return $this->getResponseFromCache($data);
+            try {
+                if ($this->isCacheable($key, $lifetime) && !empty($data = $this->cache->get($key))) {
+                    return $this->getResponseFromCache($data);
+                }
+            } catch (\Exception $e) {
             }
 
             /** @var Promise $promise */
