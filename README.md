@@ -9,8 +9,7 @@ HTTP client на основе [Guzzle](https://github.com/guzzle/guzzle) с пр
 - Выполнение нескольких параллельных асинхронных запросов ([Pattern: API Composition](https://microservices.io/patterns/data/api-composition.html))
 
 ### Требования
-- Phalcon 3.x+
-- PHP 7.0+
+- PHP 7.2+
 - guzzlehttp/guzzle 6.0+
 - ejsmont-artur/php-circuit-breaker
 
@@ -36,6 +35,8 @@ $ composer require chocofamilyme/smart-http
 
     $response = $request->send('GET', 'http://service/item', $options);
 ```
+
+Параметр ``$cache`` не обязательный. Если он отсутсвует, не работает кэширование запросов и автотключение сервисов.
 
 ### Парметры, которые содержит объект $config
 

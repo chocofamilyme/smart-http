@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package Chocolife.me
  * @author  Kamet Aziza <kamet.a@chocolife.kz>
@@ -8,25 +9,37 @@ namespace Chocofamily\SmartHttp\Middleware;
 
 use Chocofamily\SmartHttp\Http\Request;
 use Chocofamily\SmartHttp\Http\Response;
+use Psr\SimpleCache\InvalidArgumentException;
+use Throwable;
 use function Chocofamily\SmartHttp\unparse_url;
 use GuzzleHttp\Promise\Promise;
 use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Psr7\Response as PsrResponse;
-use Phalcon\Cache\BackendInterface;
+use Psr\SimpleCache\CacheInterface;
 use Psr\Http\Message\RequestInterface;
+use function GuzzleHttp\Promise\rejection_for;
 
+/**
+ * Class CacheMiddleware
+ *
+ * @package Chocofamily\SmartHttp\Middleware
+ */
 class CacheMiddleware
 {
     const DEFAULT_KEY_PREFIX  = 'smarthttp_';
     const SUCCESS_STATUS_CODE = 200;
+
     const EXCLUDED_PARAMS     = [
         'correlation_id',
         'span_id',
     ];
 
+    /**
+     * @var CacheInterface
+     */
     private $cache;
 
-    public function __construct(BackendInterface $cache)
+    public function __construct(CacheInterface $cache)
     {
         $this->cache = $cache;
     }
@@ -42,8 +55,7 @@ class CacheMiddleware
                 if ($this->isCacheable($key, $lifetime) && !empty($data = $this->cache->get($key))) {
                     return $this->getResponseFromCache($data);
                 }
-            } catch (\Exception $e) {
-            }
+            } catch (Throwable $e) {}
 
             /** @var Promise $promise */
             $promise = $handler($request, $requestOptions);
@@ -54,10 +66,10 @@ class CacheMiddleware
                         $this->saveToCache($key, $value, $lifetime);
                     }
 
-                    return \GuzzleHttp\Promise\promise_for($value);
+                    return promise_for($value);
                 },
                 function ($reason) {
-                    return \GuzzleHttp\Promise\rejection_for($reason);
+                    return rejection_for($reason);
                 }
             );
         };
@@ -136,6 +148,13 @@ class CacheMiddleware
         return $response->isSuccessful();
     }
 
+    /**
+     * @param             $key
+     * @param PsrResponse $response
+     * @param             $lifetime
+     *
+     * @throws InvalidArgumentException
+     */
     private function saveToCache($key, PsrResponse $response, $lifetime)
     {
         $data = [
@@ -143,6 +162,6 @@ class CacheMiddleware
             'body'    => $response->getBody()->getContents(),
         ];
         $response->getBody()->rewind();
-        $this->cache->save($key, $data, $lifetime);
+        $this->cache->set($key, $data, $lifetime);
     }
 }

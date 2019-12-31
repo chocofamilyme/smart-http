@@ -12,14 +12,19 @@ use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Response;
 use Helper\SmartHttp\CacheMock;
-use Phalcon\Cache\BackendInterface;
-use Phalcon\Config;
+use Psr\SimpleCache\CacheInterface;
 
 class CacheCest
 {
-    /** @var BackendInterface */
+    /** @var CacheInterface */
     private $cache;
 
+    /**
+     * @param \UnitTester $I
+     *
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Psr\SimpleCache\InvalidArgumentException
+     */
     protected function tryToSaveIntoCache(\UnitTester $I)
     {
         $I->wantToTest('сохранить в кэш');
@@ -28,14 +33,20 @@ class CacheCest
 
         $method = 'GET';
         $uri    = 'test.com';
-        $key    = CacheMiddleware::CACHE_KEY_PREFIX.md5($method.$uri);
+        $key    = CacheMiddleware::DEFAULT_KEY_PREFIX.md5($method.$uri);
 
         $request = $this->getPreparedRequest($responses);
         $request->send($method, $uri, ['cache' => 60]);
 
-        $I->assertTrue($this->cache->exists($key));
+        $I->assertTrue($this->cache->has($key));
     }
 
+    /**
+     * @param \UnitTester $I
+     *
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Psr\SimpleCache\InvalidArgumentException
+     */
     protected function tryToNotSaveIntoCacheIfPost(\UnitTester $I)
     {
         $I->wantToTest('не сохранять в кэш если запрос POST');
@@ -47,14 +58,20 @@ class CacheCest
 
         $method = 'POST';
         $uri    = 'test.com';
-        $key    = CacheMiddleware::CACHE_KEY_PREFIX.md5($method.$uri);
+        $key    = CacheMiddleware::DEFAULT_KEY_PREFIX.md5($method.$uri);
 
         $request = $this->getPreparedRequest($responses);
 
         $request->send($method, $uri, ['cache' => 60]);
-        $I->assertFalse($this->cache->exists($key));
+        $I->assertFalse($this->cache->has($key));
     }
 
+    /**
+     * @param \UnitTester $I
+     *
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @throws \Psr\SimpleCache\InvalidArgumentException
+     */
     protected function tryToNotSaveIntoCacheIfNoLifetime(\UnitTester $I)
     {
         $I->wantToTest('не сохранять в кэш если не указан lifetime');
@@ -65,12 +82,12 @@ class CacheCest
 
         $method = 'GET';
         $uri    = 'test.com';
-        $key    = CacheMiddleware::CACHE_KEY_PREFIX.md5($method.$uri);
+        $key    = CacheMiddleware::DEFAULT_KEY_PREFIX.md5($method.$uri);
 
         $request = $this->getPreparedRequest($responses);
 
         $request->send($method, $uri);
-        $I->assertFalse($this->cache->exists($key));
+        $I->assertFalse($this->cache->has($key));
     }
 
     protected function tryToGetResponseFromCache(\UnitTester $I)
@@ -216,13 +233,12 @@ class CacheCest
     {
         $handler = new MockHandler($responses);
 
-        /** @var Config $config */
-        $config               = \Phalcon\Di::getDefault()->getShared('config')->get('smartHttp', []);
+        /** @var array $config */
+        $config               = [];
         $config['handler']    = $handler;
-        $config['maxRetries'] = 1;
+        $config['maxRetries'] = 3;
 
-        $config->merge(new Config($params));
-
+        $config      = array_merge($config, $params);
         $this->cache = new CacheMock();
 
         return new Request($config, $this->cache);

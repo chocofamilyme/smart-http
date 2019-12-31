@@ -13,12 +13,11 @@ use GuzzleHttp\Promise\Promise;
 use function GuzzleHttp\Psr7\build_query;
 use GuzzleHttp\Psr7\Response;
 use Helper\SmartHttp\CacheMock;
-use Phalcon\Cache\BackendInterface;
-use Phalcon\Config;
+use Psr\SimpleCache\CacheInterface;
 
 class RequestCest
 {
-    /** @var BackendInterface */
+    /** @var CacheInterface */
     private $cache;
 
     public function tryToSendSyncRequest(\UnitTester $I)
@@ -43,6 +42,11 @@ class RequestCest
         $I->assertEquals(200, $response->getStatusCode());
     }
 
+    /**
+     * @param \UnitTester $I
+     *
+     * @throws \Throwable
+     */
     public function tryToSendMultipleRequest(\UnitTester $I)
     {
         $responses = [
@@ -117,14 +121,14 @@ class RequestCest
      */
     public function tryToSendFormParams(\UnitTester $I)
     {
-        $responses   = [
+        $responses = [
             function (\GuzzleHttp\Psr7\Request $request, $options) {
                 return new Response(200, [], $request->getBody()->getContents());
             },
         ];
 
         $request = $this->getPreparedRequest($responses);
-        $data = [
+        $data    = [
             'data' => ['key' => 'value'],
         ];
 
@@ -136,8 +140,6 @@ class RequestCest
 
     /**
      * @param \UnitTester $I
-     *
-     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function tryToSendRawDataWithFormParams(\UnitTester $I)
     {
@@ -153,7 +155,7 @@ class RequestCest
         /** @var Response $promise */
         $response = $request->send('POST', 'http://test.com', [
             'data' => ['key' => 'value'],
-            'body'  => $rawDataText,
+            'body' => $rawDataText,
         ]);
 
         $I->assertEquals($rawDataText, $response->getBody()->getContents());
@@ -166,17 +168,18 @@ class RequestCest
      */
     public function tryToSendRawDataWithQueryParams(\UnitTester $I)
     {
-        $responses   = [
+        $responses = [
             function (\GuzzleHttp\Psr7\Request $request, $options) {
                 $result = $request->getBody()->getContents().'|'.$request->getUri()->getQuery();
+
                 return new Response(200, [], $result);
             },
         ];
 
         $request = $this->getPreparedRequest($responses);
-        $data = [
+        $data    = [
             'data' => ['key' => 'value'],
-            'body'  => 'test_raw_data',
+            'body' => 'test_raw_data',
         ];
 
         /** @var Response $promise */
@@ -198,13 +201,12 @@ class RequestCest
     {
         $handler = new MockHandler($responses);
 
-        /** @var Config $config */
-        $config               = \Phalcon\Di::getDefault()->getShared('config')->get('smartHttp', []);
+        /** @var array $config */
+        $config               = [];
         $config['handler']    = $handler;
         $config['maxRetries'] = 3;
 
-        $config->merge(new Config($params));
-
+        $config      = array_merge($config, $params);
         $this->cache = new CacheMock();
 
         return new Request($config, $this->cache);
