@@ -4,16 +4,13 @@ namespace Chocofamily\SmartHttp\Http;
 
 use Chocofamily\SmartHttp\CircuitBreaker;
 use Chocofamily\SmartHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Promise\PromiseInterface;
 use function GuzzleHttp\Promise\settle;
-use Phalcon\Cache\BackendInterface;
-use Phalcon\Config;
-use Phalcon\Di\Injectable;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
+use Psr\SimpleCache\CacheInterface;
 
-class Request extends Injectable
+class Request
 {
     const SUCCESS_STATE  = 'fulfilled';
     const SERVICE_NAME   = 'serviceName';
@@ -43,8 +40,8 @@ class Request extends Injectable
     ];
 
     public function __construct(
-        Config $config,
-        BackendInterface $cache
+        array $config,
+        CacheInterface $cache
     ) {
         $this->httpClient = new Client($config, $cache);
     }
@@ -55,8 +52,7 @@ class Request extends Injectable
      *
      * @param array  $data
      *
-     * @return mixed|ResponseInterface
-     * @throws GuzzleException
+     * @return ResponseInterface
      */
     public function send(string $method, string $uri, $data = [])
     {
@@ -105,7 +101,7 @@ class Request extends Injectable
     {
         $options = [];
 
-        if ($this->doesntHaveData($data)) {
+        if ($this->isGet($method) || $this->doesntHaveData($data)) {
             $options[$this->methods[$method]] = $data[self::DATA] ?? null;
         }
 
@@ -122,17 +118,37 @@ class Request extends Injectable
      */
     private function doesntHaveData(array $data): bool
     {
-        if(empty($data[self::DATA]) == false) {
-            return true;
-        }
-
-        foreach (self::DATA_KEY as $key) {
-            if (array_key_exists($key, $data)) {
-                return false;
-            }
+        if (!empty($data[self::DATA]) && $this->hasAnotherData($data)) {
+            return false;
         }
 
         return true;
+    }
+
+    /**
+     * @param array $data
+     *
+     * @return bool
+     */
+    private function hasAnotherData(array $data): bool
+    {
+        foreach (self::DATA_KEY as $key) {
+            if (array_key_exists($key, $data)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param string $method
+     *
+     * @return bool
+     */
+    private function isGet(string $method): bool
+    {
+        return strtoupper($method) == 'GET';
     }
 
     /**

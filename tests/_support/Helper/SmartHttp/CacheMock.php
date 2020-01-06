@@ -6,57 +6,31 @@
 
 namespace Helper\SmartHttp;
 
-class CacheMock implements \Phalcon\Cache\BackendInterface
+use Psr\SimpleCache\CacheInterface;
+
+/**
+ * Class CacheMock
+ *
+ * @package Helper\SmartHttp
+ */
+class CacheMock implements CacheInterface
 {
+    /**
+     * @var array
+     */
     private $data = [];
+
+    /**
+     * @var string
+     */
     private $lastKey;
-
-    public function start($keyName, $lifetime = null)
-    {
-        // TODO: Implement start() method.
-    }
-
-    public function stop($stopBuffer = null)
-    {
-        // TODO: Implement stop() method.
-    }
-
-    public function getFrontend()
-    {
-        // TODO: Implement getFrontend() method.
-    }
-
-    public function getOptions()
-    {
-        // TODO: Implement getOptions() method.
-    }
-
-    public function isFresh()
-    {
-        // TODO: Implement isFresh() method.
-    }
-
-    public function isStarted()
-    {
-        // TODO: Implement isStarted() method.
-    }
-
-    public function setLastKey($lastKey)
-    {
-        // TODO: Implement setLastKey() method.
-    }
-
-    public function getLastKey()
-    {
-        return $this->lastKey;
-    }
 
     public function get($keyName, $lifetime = null)
     {
-        return $this->data[$keyName] ?? "";
+        return $this->data[$keyName] ?? null;
     }
 
-    public function save($keyName = null, $content = null, $lifetime = null, $stopBuffer = null)
+    public function set($keyName = null, $content = null, $lifetime = null, $stopBuffer = null)
     {
         $this->lastKey        = $keyName;
         $this->data[$keyName] = $content;
@@ -64,16 +38,33 @@ class CacheMock implements \Phalcon\Cache\BackendInterface
 
     public function delete($keyName)
     {
-        // TODO: Implement delete() method.
+        if (isset($this->data[$keyName])) {
+            unset($this->data[$keyName]);
+        }
     }
 
-    public function queryKeys($prefix = null)
+    public function has($keyName = null)
     {
-        // TODO: Implement queryKeys() method.
+        return isset($this->data[$keyName]);
     }
 
-    public function exists($keyName = null, $lifetime = null)
+    public function clear()
     {
-        return array_key_exists($keyName, $this->data);
+        $this->data = [];
+    }
+
+    public function getMultiple($keys, $default = null)
+    {
+        // TODO: Implement getMultiple() method.
+    }
+
+    public function setMultiple($values, $ttl = null)
+    {
+        // TODO: Implement setMultiple() method.
+    }
+
+    public function deleteMultiple($keys)
+    {
+        // TODO: Implement deleteMultiple() method.
     }
 }

@@ -14,7 +14,6 @@ use GuzzleHttp\Psr7\Request;
 use Chocofamily\SmartHttp\Client;
 use function GuzzleHttp\Psr7\stream_for;
 use Helper\SmartHttp\CacheMock;
-use Phalcon\Config;
 
 class RetryCest
 {
@@ -59,7 +58,7 @@ class RetryCest
             [
                 'message'   => 'повторить при ошибке с API',
                 'responses' => [
-                    new Response(201, [], stream_for(json_encode([
+                    new Response(200, [], stream_for(json_encode([
                         'status'     => 'error',
                         'error_code' => 500,
                         'message'    => 'test error',
@@ -144,16 +143,22 @@ class RetryCest
         $I->assertEquals($expectedTime, round($endTime - $startTime));
     }
 
+    /**
+     * @param       $responses
+     * @param array $params
+     *
+     * @return Client
+     */
     private function getPreparedClient($responses, $params = [])
     {
         $handler = new MockHandler($responses);
 
-        /** @var \Phalcon\Config $config */
-        $config               = \Phalcon\Di::getDefault()->getShared('config')->get('smartHttp', []);
+        /** @var array $config */
+        $config               = [];
         $config['handler']    = $handler;
         $config['maxRetries'] = 3;
 
-        $config->merge(new Config($params));
+        $config      = array_merge($config, $params);
         $cache = new CacheMock();
 
         return new Client($config, $cache);

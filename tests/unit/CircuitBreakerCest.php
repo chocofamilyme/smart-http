@@ -13,8 +13,6 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Helper\SmartHttp\CacheMock;
-use Phalcon\Config;
-use Phalcon\Di;
 use UnitTester;
 
 /**
@@ -71,6 +69,9 @@ class CircuitBreakerCest
         ];
     }
 
+    /**
+     * @param UnitTester $I
+     */
     public function tryToUnblockAfterExceededTimeout(UnitTester $I)
     {
         $I->wantToTest('разблокировать после истечении времени');
@@ -100,17 +101,23 @@ class CircuitBreakerCest
         $I->assertEquals(200, $responses->getStatusCode());
     }
 
+    /**
+     * @param       $responses
+     * @param array $params
+     *
+     * @return Client
+     */
     private function getPreparedClient($responses, $params = [])
     {
         $handler = new MockHandler($responses);
 
-        /** @var Config $config */
-        $config               = Di::getDefault()->getShared('config')->get('smartHttp', []);
+        /** @var array $config */
+        $config               = [];
         $config['handler']    = $handler;
         $config['maxRetries'] = 1;
         $config['failures']   = 1;
 
-        $config->merge(new Config($params));
+        $config      = array_merge($config, $params);
         $cache = new CacheMock();
 
         return new Client($config, $cache);
