@@ -41,7 +41,7 @@ class Request
 
     public function __construct(
         array $config,
-        CacheInterface $cache
+        ?CacheInterface $cache = null
     ) {
         $this->httpClient = new Client($config, $cache);
     }
