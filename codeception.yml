@@ -1,13 +1,13 @@
 paths:
-    tests: tests
-    output: tests/_output
-    data: tests/_data
-    support: tests/_support
-    envs: tests/_envs
+  tests: tests
+  output: tests/_output
+  log: tests/_logs
+  data: tests/_data
+  support: tests/_support
 actor_suffix: Tester
 settings:
-    colors: true
-    memory_limit: 1024M
+  colors: true
+  memory_limit: 1024M
 extensions:
-    enabled:
-        - Codeception\Extension\RunFailed
+  enabled:
+    - Codeception\Extension\RunFailed
