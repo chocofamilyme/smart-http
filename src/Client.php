@@ -13,7 +13,6 @@ use Chocofamily\SmartHttp\Storage\CacheStorage;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
-use Phalcon\Cache\BackendInterface;
 
 
 /**
@@ -29,7 +28,7 @@ class Client extends GuzzleClient
     protected $config;
 
     /**
-     * @var BackendInterface
+     * @var CacheInterface
      */
     protected $cache;
 
