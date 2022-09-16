@@ -76,6 +76,6 @@ class CacheStorage extends BaseAdapter
 
     private function getKey($key)
     {
-        return $this->cachePrefix.'#'.$key;
+        return $this->cachePrefix.'_'.$key;
     }
 }
