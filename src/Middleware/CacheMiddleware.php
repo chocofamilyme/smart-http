@@ -9,15 +9,14 @@ namespace Chocofamily\SmartHttp\Middleware;
 
 use Chocofamily\SmartHttp\Http\Request;
 use Chocofamily\SmartHttp\Http\Response;
+use GuzzleHttp\Promise\Create;
 use Psr\SimpleCache\InvalidArgumentException;
 use Throwable;
 use function Chocofamily\SmartHttp\unparse_url;
 use GuzzleHttp\Promise\Promise;
-use function GuzzleHttp\Promise\promise_for;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Psr\SimpleCache\CacheInterface;
 use Psr\Http\Message\RequestInterface;
-use function GuzzleHttp\Promise\rejection_for;
 
 /**
  * Class CacheMiddleware
@@ -66,10 +65,10 @@ class CacheMiddleware
                         $this->saveToCache($key, $value, $lifetime);
                     }
 
-                    return promise_for($value);
+                    return Create::promiseFor($value);
                 },
                 function ($reason) {
-                    return rejection_for($reason);
+                    return Create::rejectionFor($reason);
                 }
             );
         };
@@ -133,7 +132,7 @@ class CacheMiddleware
     {
         $response = new PsrResponse(200, $data['headers'], $data['body']);
 
-        return promise_for($response);
+        return Create::promiseFor($response);
     }
 
     private function isCacheable($key, $lifetime)

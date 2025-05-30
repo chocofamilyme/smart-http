@@ -4,6 +4,7 @@ namespace Chocofamily\SmartHttp\Middleware;
 
 use Chocofamily\SmartHttp\Exception\CircuitIsClosedException;
 use Chocofamily\SmartHttp\CircuitBreaker;
+use GuzzleHttp\Promise\Create;
 use Psr\Http\Message\RequestInterface;
 
 class CircuitBreakerMiddleware
@@ -69,7 +70,7 @@ class CircuitBreakerMiddleware
             }
 
             if (!$this->circuitBreaker->isAvailable($serviceName)) {
-                return \GuzzleHttp\Promise\rejection_for(
+                return Create::rejectionFor(
                     new CircuitIsClosedException(
                         sprintf('Circuit for service "%s" is closed', $serviceName)
                     )
@@ -83,12 +84,12 @@ class CircuitBreakerMiddleware
                 function ($value) use ($serviceName) {
                     $this->circuitBreaker->fulfilled($value, $serviceName);
 
-                    return \GuzzleHttp\Promise\promise_for($value);
+                    return Create::promiseFor($value);
                 },
                 function ($reason) use ($serviceName) {
                     $this->circuitBreaker->rejected($reason, $serviceName, $this->exceptionMap);
 
-                    return \GuzzleHttp\Promise\rejection_for($reason);
+                    return Create::rejectionFor($reason);
                 }
             );
         };
