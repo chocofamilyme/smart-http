@@ -12,6 +12,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Psr7\Response;
 use GuzzleHttp\Psr7\Request;
 use Chocofamily\SmartHttp\Client;
+use GuzzleHttp\Psr7\Utils;
 use function GuzzleHttp\Psr7\stream_for;
 use Helper\SmartHttp\CacheMock;
 
@@ -58,7 +59,7 @@ class RetryCest
             [
                 'message'   => 'повторить при ошибке с API',
                 'responses' => [
-                    new Response(200, [], stream_for(json_encode([
+                    new Response(200, [], Utils::streamFor(json_encode([
                         'status'     => 'error',
                         'error_code' => 500,
                         'message'    => 'test error',

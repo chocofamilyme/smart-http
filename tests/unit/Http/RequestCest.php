@@ -10,7 +10,7 @@ use Chocofamily\SmartHttp\Http\Request;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\Promise\Promise;
-use function GuzzleHttp\Psr7\build_query;
+use GuzzleHttp\Psr7\Query;
 use GuzzleHttp\Psr7\Response;
 use Helper\SmartHttp\CacheMock;
 use Psr\SimpleCache\CacheInterface;
@@ -135,7 +135,7 @@ class RequestCest
         /** @var Response $promise */
         $response = $request->send('POST', 'http://test.com', $data);
 
-        $I->assertEquals(build_query($data['data']), $response->getBody()->getContents());
+        $I->assertEquals(Query::build($data['data']), $response->getBody()->getContents());
     }
 
     /**
@@ -186,7 +186,7 @@ class RequestCest
         $response = $request->send('GET', 'http://test.com', $data);
 
         $I->assertEquals(
-            $data['body'].'|'.build_query($data['data']),
+            $data['body'].'|'.Query::build($data['data']),
             $response->getBody()->getContents()
         );
     }

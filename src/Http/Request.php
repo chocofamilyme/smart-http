@@ -5,6 +5,7 @@ namespace Chocofamily\SmartHttp\Http;
 use Chocofamily\SmartHttp\CircuitBreaker;
 use Chocofamily\SmartHttp\Client;
 use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Promise\Utils;
 use function GuzzleHttp\Promise\settle;
 use Psr\Http\Message\ResponseInterface;
 use Throwable;
@@ -94,7 +95,7 @@ class Request
             $promises[$name] = $this->httpClient->requestAsync($data['method'], $data['path'], $options);
         }
 
-        return settle($promises)->wait();
+        return Utils::settle($promises)->wait();
     }
 
     private function generateOptions($method, $data)

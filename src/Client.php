@@ -114,6 +114,11 @@ class Client extends GuzzleClient
         );
     }
 
+    public function addStack(callable $middleware, string $name = '')
+    {
+        $this->stack->push($middleware, $name);
+    }
+
     /**
      * @return Repeater
      */
